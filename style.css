@@ -1,0 +1,51 @@
+body {
+    margin: 0 auto;
+    /* Puedes cambiar el color de fondo (background-color) si lo deseas */
+    background-color: lightblue;
+    max-width: 80%;
+    min-width: 500px;
+    text-align: center;
+}
+
+.case h2 {
+    /* Puedes cambiar el color de fondo (background-color) si lo deseas */
+    background-color: #e0a45e;
+    padding: 10px;
+    margin: 10px;
+}
+
+.response {
+    text-align: start;
+    border: solid gray 2px;
+    padding: 10px;
+    margin: 10px;
+}
+
+.response h5 {
+    margin: 0px;
+    color: rgb(57, 57, 57);
+}
+
+.response h4 {
+    margin-bottom: 0px;
+}
+
+.img {
+    max-width: 800px;
+    display: inline-flex;
+    justify-content: center;
+    margin: 10px;
+}
+
+img{
+    width: 100%;
+    height: auto;
+}
+
+.hint{
+    opacity: 0.7;
+    color: rgb(200, 42, 42);
+    border: 1px solid;
+    padding: 5px;
+    font-weight: bolder;
+}

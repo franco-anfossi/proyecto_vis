@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="style_vis.css">
     <script src="https://d3js.org/d3.v7.js"></script>
     <script src="https://d3js.org/d3-geo-projection.v4.min.js"></script>
     <title>LOLITO</title>
@@ -13,16 +13,17 @@
 
 <body>
     <div class="container">
-        <h1>Sistema Solar</h1>
+        <h1>Proyecto</h1>
 
         <h2>Visualización 1 - Mapa Mundi con Datos Promediados del Año mas Actual</h2>
-        <div id="vis-1">
-        </div>
+        <div id="vis-1"></div>
 
         <h2>Visualización 2 - Al Seleccionar un Pais Mostrar en graficos de lineas la evoluacion del porcentaje</h2>
         <div id="vis-2">
             <h4 id="selected"></h4>
         </div>
+
+        <div id="tooltip"></div>
     </div>
     <script src="main.js"></script>
 </body>

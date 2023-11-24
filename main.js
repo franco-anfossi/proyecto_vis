@@ -1,42 +1,103 @@
-// Constantes
-const WIDTH = 1300;
-const HEIGHT = 1000;
-const MARGIN = { 
+// ------------------------- Constantes SVG1 -------------------------
+const WIDTH1 = 1300;
+const HEIGHT1 = 1000;
+const MARGIN1 = { 
     top: 20,
     right: 50,
     bottom: 20,
     left: 50
 };
 
-const width = WIDTH - MARGIN.left - MARGIN.right;
-const height = HEIGHT - MARGIN.top - MARGIN.bottom;
+const widthOne = WIDTH1 - MARGIN1.left - MARGIN1.right;
+const heightOne = HEIGHT1 - MARGIN1.top - MARGIN1.bottom;
 
-// SVG
+// ------------------------- Constantes SVG2 -------------------------
+const WIDTH2 = 1000;
+const HEIGHT2 = 800;
+const MARGIN2 = { 
+    top: 50, 
+    right: 30, 
+    bottom: 30, 
+    left: 60 
+};
+const width2 = WIDTH2 - MARGIN2.left - MARGIN2.right;
+const height2 = HEIGHT2 - MARGIN2.top - MARGIN2.bottom;
+
+// ------------------------- Variables globales -------------------------
+let datosMentalCSV;
+let datosMapa;
+let datosPopulationCSV;
+let codigoPaisSeleccionado = null;
+
+// ------------------------- SVG1 -------------------------
 const svg1 = d3
-.select("#vis-1")
-.append("svg")
-.attr("width", WIDTH)
-.attr("height", HEIGHT);
+    .select("#vis-1")
+    .append("svg")
+    .attr("width", WIDTH1)
+    .attr("height", HEIGHT1);
 
-// G
+// Contenedor para el mapa
 const contenedorMapa = svg1
-.append("g")
-.attr("id", "mapa")
-.attr("transform", `translate(${MARGIN.left}, ${MARGIN.top})`);
+    .append("g")
+    .attr("id", "mapa")
+    .attr("transform", `translate(${MARGIN1.left}, ${MARGIN1.top})`);
 
-// Define la función de zoom y el evento
+// Zoom
 const zoom = d3.zoom()
-.scaleExtent([1, 8]) // Esto define los límites del zoom (min, max)
-.translateExtent([[0, 0], [width, height]]) // Esto restringe el pan dentro del área del mapa
-.on('zoom', (event) => {
-    contenedorMapa.attr('transform', event.transform);
+    .scaleExtent([1, 8])
+    .translateExtent([[0, 0], [widthOne, heightOne]])
+    .on('zoom', (event) => {
+        contenedorMapa.attr('transform', event.transform);
 });
 
-// Aplica la función de zoom al SVG
+// Aplicar zoom a SVG1
 svg1.call(zoom);
 
-// Función para procesar los datos CSV
-function procesarDatosCSV(d) {
+// ------------------------- SVG2 -------------------------
+
+const svg2 = d3.select("#vis-2")
+    .append("svg")
+    .attr("width", width2 + MARGIN2.left + MARGIN2.right)
+    .attr("height", height2 + MARGIN2.top + MARGIN2.bottom)
+    .append("g")
+    .attr("transform", `translate(${MARGIN2.left},${MARGIN2.top})`);
+
+svg2.append("g")
+    .attr("transform", `translate(0,${height2})`)
+    .attr("class", "eje-x");
+
+svg2.append("g")
+    .attr("class", "eje-y");
+
+// Variables globales SVG2 (ejes y colores)
+const colors = d3.scaleOrdinal(d3.schemeCategory10);
+const x = d3.scaleLinear().range([0, width2]);
+const y = d3.scaleLinear().range([height2, 0]);
+
+// Crear leyenda
+const leyenda = svg2.append("g")
+    .attr("class", "leyenda")
+    .attr("transform", `translate(0, ${-10})`);
+
+crearLeyenda();
+
+// ------------------------- Definicion de Botones -------------------------
+d3.select("#btnPromedio").on("click", () => cambiarTrastorno("Promedio"));
+d3.select("#btnSchizophrenia").on("click", () => cambiarTrastorno("Schizophrenia"));
+d3.select("#btnBipolar").on("click", () => cambiarTrastorno("Bipolar"));
+d3.select("#btnEating").on("click", () => cambiarTrastorno("Eating"));
+d3.select("#btnAnxiety").on("click", () => cambiarTrastorno("Anxiety"));
+d3.select("#btnDrug").on("click", () => cambiarTrastorno("Drug"));
+d3.select("#btnDepressive").on("click", () => cambiarTrastorno("Depressive"));
+d3.select("#btnAlcohol").on("click", () => cambiarTrastorno("Alcohol"));
+
+d3.select("#btnPorcentual").on("click", mostrarEvolucionPorcentual);
+d3.select("#btnCantidad").on("click", mostrarEvolucionCantidad);
+
+// ------------------------------------------- Funciones -------------------------------------------
+
+// -----> Procesamiento de datos
+function procesarDatosMentalCSV(d) {
     const schizophrenia = +d["Schizophrenia (%)"];
     const bipolar = +d["Bipolar disorder (%)"];
     const eating = +d["Eating disorders (%)"];
@@ -45,14 +106,13 @@ function procesarDatosCSV(d) {
     const depressive = +d["Depression (%)"]; 
     const alcohol = +d["Alcohol use disorders (%)"];
 
-    // Calcula el promedio de los porcentajes
+    // Promedio trastornos
     let promedio = (
         schizophrenia + bipolar + 
         eating + anxiety + drug + 
         depressive + alcohol
     ) / 7;
 
-    // Redondear a tres decimales y convertir a número
     promedio = Number(promedio.toFixed(3));
 
     return {
@@ -71,50 +131,51 @@ function procesarDatosCSV(d) {
     }
 }
 
-let datosCSV;
-let datosMapa;
-
-function cambiarTrastorno(trastornoSeleccionado) {
-    const ultimoAno = d3.max(datosCSV, d => d.Year);
-    const datosFiltrados = datosCSV.filter(d => d.Year === ultimoAno);
-    crearMapa(datosFiltrados, trastornoSeleccionado);
+function procesarDatosPopulationCSV(d) {
+    return {
+        ID: +d.index,
+        Entity: d.Entity,
+        Code: d.Code,
+        Year: +d.Year,
+        Population: +d.Population
+    }
 }
 
-// Cargar datos y crear mapa con el promedio inicialmente
+// -----> Cargar datos
 d3.json("data/countries.geojson").then((mapData) => {
-    datosMapa = mapData; // Asignar los datos a la variable global
-    d3.csv("data/Mental Health Data1.csv", procesarDatosCSV).then((csvData) => {
-        datosCSV = csvData; // Asignar los datos a la variable global
-        cambiarTrastorno("Promedio"); // Iniciar con el promedio
+    datosMapa = mapData;
+    d3.csv("data/Mental Health Data.csv", procesarDatosMentalCSV).then((csvData) => {
+        datosMentalCSV = csvData;
+        cambiarTrastorno("Promedio");
     });
 });
 
-const escalasColores = {
-    "Schizophrenia": d3.scaleSequential(d3.interpolateBlues),
-    "Bipolar": d3.scaleSequential(d3.interpolateReds),
-    "Eating": d3.scaleSequential(d3.interpolateGreens),
-    "Anxiety": d3.scaleSequential(d3.interpolateOranges),
-    "Drug": d3.scaleSequential(d3.interpolatePurples),
-    "Depressive": d3.scaleSequential(d3.interpolateCool),
-    "Alcohol": d3.scaleSequential(d3.interpolateWarm),
-    "Promedio": d3.scaleSequential(d3.interpolatePlasma)
-};
+d3.csv("data/Aproximated World Population.csv", procesarDatosPopulationCSV).then((csvData) => {
+    datosPopulationCSV = csvData;
+});
 
+// -----> Funcion de eleccion de trastorno por boton
+function cambiarTrastorno(trastornoSeleccionado) {
+    const ultimoAno = d3.max(datosMentalCSV, d => d.Year);
+    const datosFiltrados = datosMentalCSV.filter(d => d.Year === ultimoAno);
+    crearMapa(datosFiltrados, trastornoSeleccionado);
+}
+
+// -----> Funcion de creacion de mapa mundi (parte de este codigo fue tomado de la ayudantia de Grafos y Mapas)
 function crearMapa(datosFiltrados, trastorno) {
     const proyeccion = d3
         .geoMercator()
-        .fitSize([width, height], datosMapa);
+        .fitSize([widthOne, heightOne], datosMapa);
 
     const caminosGeo = d3
         .geoPath()
         .projection(proyeccion);
 
-    // Escala de colores basada en el promedio
     const maxValor = d3.max(datosFiltrados, d => d[trastorno]);
     const escalaColores = d3.scaleSequential(d3.interpolateReds)
         .domain([0, maxValor]);
 
-    // Unión de los datos con los elementos path
+    // aplicacion de datos al mapa y animacion de cambio
     contenedorMapa.selectAll("path")
         .data(datosMapa.features)
         .join(
@@ -141,29 +202,29 @@ function crearMapa(datosFiltrados, trastorno) {
 
     function mouseover(event, d) {
         const datoPais = datosFiltrados.find(p => p.Code === d.properties.ISO_A3);
-            if (datoPais) {
-                d3.select("#tooltip")
-                    .style("visibility", "visible")
-                    .html(
-                        `<strong>${datoPais.Entity}</strong><br>
-                        Schizophrenia: ${datoPais.Schizophrenia.toFixed(3)}%<br>
-                        Bipolar Disorder: ${datoPais.Bipolar.toFixed(3)}%<br>
-                        Eating Disorders: ${datoPais.Eating.toFixed(3)}%<br>
-                        Anxiety Disorders: ${datoPais.Anxiety.toFixed(3)}%<br>
-                        Drug Use Disorders: ${datoPais.Drug.toFixed(3)}%<br>
-                        Depressive Disorders: ${datoPais.Depressive.toFixed(3)}%<br>
-                        Alcohol Use Disorders: ${datoPais.Alcohol.toFixed(3)}%<br>
-                        Average Mental Health Disorders: ${datoPais.Promedio}%<br>`
-                    )
-                    .style("left", (event.pageX + 10) + "px") 
-                    .style("top", (event.pageY - 28) + "px");
-            }
+        if (datoPais) {
+            d3.select("#tooltip")
+                .style("visibility", "visible")
+                .html(
+                    `<strong>${datoPais.Entity}</strong><br>
+                    Esquizofrenia: ${datoPais.Schizophrenia.toFixed(3)}%<br>
+                    Trastorno Bipolar: ${datoPais.Bipolar.toFixed(3)}%<br>
+                    Trastornos Alimenticios: ${datoPais.Eating.toFixed(3)}%<br>
+                    Trastornos de Ansiedad: ${datoPais.Anxiety.toFixed(3)}%<br>
+                    Trastornos Depresivos: ${datoPais.Depressive.toFixed(3)}%<br>
+                    Trastornos por Drogas: ${datoPais.Drug.toFixed(3)}%<br>
+                    Trastornos por Alcohol: ${datoPais.Alcohol.toFixed(3)}%<br>
+                    Trastornos Promedio: ${datoPais.Promedio}%<br>`
+                )
+                .style("left", (event.pageX + 10) + "px") 
+                .style("top", (event.pageY - 30) + "px");
+        }
     }
 
     function mousemove(event) {
         d3.select("#tooltip")
             .style("left", (event.pageX + 10) + "px") 
-            .style("top", (event.pageY - 28) + "px");
+            .style("top", (event.pageY - 30) + "px");
     }
 
     function mouseout() {
@@ -171,61 +232,66 @@ function crearMapa(datosFiltrados, trastorno) {
     }
 
     function click(event, d) {
-        const codigoPais = d.properties.ISO_A3;
-        mostrarEvolucion(codigoPais, datosCSV);
+        codigoPaisSeleccionado = d.properties.ISO_A3; // Guarda el código del país seleccionado
+        mostrarEvolucionPorcentual();
     }
 }
 
-function mostrarEvolucion(codigoPais, datosCSV) {
-    // Filtra y ordena los datos para el país seleccionado
-    const datosHistoricos = datosCSV.filter(d => d.Code === codigoPais)
-                                    .sort((a, b) => d3.ascending(a.Year, b.Year));
-    
-    // Verifica que los datos filtrados son correctos
-    console.log(datosHistoricos); // Deberías ver los datos del país seleccionado
-
-    // Llama a la función para dibujar el gráfico
-    dibujarGrafico(datosHistoricos);
+// -----> Funcion de cambio de grafico SVG2 por boton
+function mostrarEvolucionPorcentual() {
+    if (codigoPaisSeleccionado) {
+        const datosHistoricos = filtrarYOrdenarDatosDeTrastornos();
+        dibujarGraficoPorcentual(datosHistoricos);
+    }
 }
 
-// Función para dibujar el gráfico de líneas en #vis-2
-function dibujarGrafico(datosHistoricos) {
-    // Borra cualquier gráfico anterior
-    d3.select('#vis-2').html('');
+function mostrarEvolucionCantidad() {
+    if (codigoPaisSeleccionado) {
+        const datosHistoricos = filtrarYOrdenarDatosDeTrastornos();
+        const datosCantidad = combinarYCalcularCantidad(datosHistoricos);
+        dibujarGraficoCantidad(datosCantidad);
+    }
+}
 
-    // Define el tamaño y los márgenes del gráfico
-    const margin = { top: 50, right: 30, bottom: 30, left: 60 },
-            width = 1000 - margin.left - margin.right,
-            height = 800 - margin.top - margin.bottom;
+function filtrarYOrdenarDatosDeTrastornos(){
+    const datosHistoricos = datosMentalCSV.filter(d => d.Code === codigoPaisSeleccionado)
+        .sort((a, b) => d3.ascending(a.Year, b.Year));
 
-    // Añade el SVG al contenedor
-    const svg2 = d3.select("#vis-2")
-        .append("svg")
-        .attr("width", width + margin.left + margin.right)
-        .attr("height", height + margin.top + margin.bottom)
-        .append("g")
-        .attr("transform", `translate(${margin.left},${margin.top})`);
+    return datosHistoricos;
+}
 
-    // Añade las escalas X e Y
-    const x = d3.scaleLinear()
-        .domain(d3.extent(datosHistoricos, d => d.Year))
-        .range([0, width]);
+// -----> Funcion de combinacion de datos de trastornos y poblacion
+function combinarYCalcularCantidad(datosHistoricos) {
+    // Con esto obtenemos la cantidad de personas afectadas por pais y año
+    return datosHistoricos.map(d => {
+        const datoPoblacion = datosPopulationCSV
+            .find(p => p.Code === codigoPaisSeleccionado && p.Year === d.Year);
 
-    svg2.append("g")
-        .attr("transform", `translate(0,${height})`)
-        .call(d3.axisBottom(x));
+        return {
+            Year: d.Year,
+            Schizophrenia: datoPoblacion ? d.Schizophrenia * datoPoblacion.Population / 100 : 0,
+            Bipolar: datoPoblacion ? d.Bipolar * datoPoblacion.Population / 100 : 0,
+            Eating: datoPoblacion ? d.Eating * datoPoblacion.Population / 100 : 0,
+            Anxiety: datoPoblacion ? d.Anxiety * datoPoblacion.Population / 100 : 0,
+            Drug: datoPoblacion ? d.Drug * datoPoblacion.Population / 100 : 0,
+            Depressive: datoPoblacion ? d.Depressive * datoPoblacion.Population / 100 : 0,
+            Alcohol: datoPoblacion ? d.Alcohol * datoPoblacion.Population / 100 : 0,
+        };
+    });
+}
 
-    // Encuentra el valor máximo entre todos los trastornos
-    const maxDisorderValue = d3.max(datosHistoricos, d => 
-        Math.max(d.Schizophrenia, d.Bipolar, d.Eating, d.Anxiety, d.Drug, d.Depressive, d.Alcohol));
+// -----> Funcion de dibujo de grafico porcentual SVG2
+function dibujarGraficoPorcentual(datosHistoricos) {
+    x.domain(d3.extent(datosHistoricos, d => d.Year));
+    y.domain([0, d3.max(datosHistoricos, d => 
+        Math.max(d.Schizophrenia, d.Bipolar, d.Eating, d.Anxiety, d.Drug, d.Depressive, d.Alcohol))
+    ]);
 
-    // Ajusta la escala Y para el valor máximo encontrado
-    const y = d3.scaleLinear()
-        .domain([0, maxDisorderValue])
-        .range([height, 0]);
-
-    // Añade el eje Y al gráfico
-    svg2.append("g")
+    // Actualizar ejes
+    svg2.select(".eje-x").call(d3.axisBottom(x));
+    svg2.select(".eje-y")
+        .transition()
+        .duration(1000)
         .call(d3.axisLeft(y));
 
     // Colores para cada trastorno
@@ -236,58 +302,196 @@ function dibujarGrafico(datosHistoricos) {
         .x(d => x(d.Year))
         .y(d => y(d[disorder]));
 
-    const disorders = ["Schizophrenia", "Bipolar", "Eating", "Anxiety", "Drug", "Depressive", "Alcohol"];
+    actualizarLineaYCirculos("Schizophrenia", datosHistoricos, colors(0));
+    actualizarLineaYCirculos("Bipolar", datosHistoricos, colors(1));
+    actualizarLineaYCirculos("Eating", datosHistoricos, colors(2));
+    actualizarLineaYCirculos("Anxiety", datosHistoricos, colors(3));
+    actualizarLineaYCirculos("Drug", datosHistoricos, colors(4));
+    actualizarLineaYCirculos("Depressive", datosHistoricos, colors(5));
+    actualizarLineaYCirculos("Alcohol", datosHistoricos, colors(6));
 
-    // Utiliza map y join para crear líneas y círculos para cada trastorno
-    disorders.map((disorder, i) => {
-        // Crea la línea para el trastorno actual
-        svg2.append("path")
-            .datum(datosHistoricos)
+    function actualizarLineaYCirculos(disorder, datos, color) {
+        // Actualizar la línea
+        svg2.selectAll(".line-" + disorder)
+            .data([datos])
+            .join("path")
+            .attr("class", "line-" + disorder)
             .attr("fill", "none")
-            .attr("stroke", colors(i))
+            .attr("stroke", color)
             .attr("stroke-width", 2.5)
+            .transition()
+            .duration(1000)
             .attr("d", createLine(disorder));
 
-        // Crea círculos para el trastorno actual
-        svg2.selectAll(".circle-" + disorder)
-            .data(datosHistoricos)
-            .join("circle")
+        // Actualizar los círculos
+        const circulos = svg2.selectAll(".circle-" + disorder)
+            .data(datos, d => d.Year);  // Key function for object constancy
+
+        circulos.enter()
+            .append("circle")
             .attr("class", "circle-" + disorder)
-            .attr("fill", colors(i))
-            .attr("stroke", colors(i))
             .attr("r", 4)
+            .attr("fill", color)
+            .attr("stroke", color)
             .attr("cx", d => x(d.Year))
             .attr("cy", d => y(d[disorder]))
-            .on("mouseover", function(event, d) {
-                d3.select("#tooltip")
-                    .style("visibility", "visible")
-                    .html(`Año: ${d.Year}<br>${disorder} Disorder: ${d[disorder].toFixed(3)}%`)
-                    .style("left", (event.pageX + 10) + "px")
-                    .style("top", (event.pageY - 28) + "px");
-            })
-            .on("mouseout", function() {
-                d3.select("#tooltip").style("visibility", "hidden");
-            });
-    });
+            .on("mouseover", mouseover)
+            .on("mouseout", mouseout)
+            .transition()
+            .duration(1000)
+            .attr("cy", d => y(d[disorder]));
+    
+        circulos
+            .on("mouseover", mouseover)
+            .on("mouseout", mouseout)
+            .transition()
+            .duration(1000)
+            .attr("cx", d => x(d.Year))
+            .attr("cy", d => y(d[disorder]));
+    
+        circulos.exit()
+            .transition()
+            .duration(1000)
+            .attr("cy", d => y(0))
+            .remove();
+    
+        function mouseover(event, d) {
+            d3.select("#tooltip")
+                .style("visibility", "visible")
+                .html(`Año: ${d.Year}<br>${disorder} Disorder: ${d[disorder].toFixed(3)}%`)
+                .style("left", (event.pageX + 10) + "px")
+                .style("top", (event.pageY - 28) + "px");
+        }
+    
+        function mouseout() {
+            d3.select("#tooltip").style("visibility", "hidden");
+        }
+    }
+}
 
-    // Crear un grupo para la leyenda
-    const leyenda = svg2.append("g")
-        .attr("class", "leyenda")
-        .attr("transform", `translate(0, ${-10})`);
+function dibujarGraficoCantidad(datosCantidad) {
+    // Configurar las escalas de acuerdo con los datos de cantidad
+    x.domain(d3.extent(datosCantidad, d => d.Year));
+    y.domain([0, d3.max(datosCantidad, d => 
+        Math.max(d.Schizophrenia, d.Bipolar, d.Eating, d.Anxiety, d.Drug, d.Depressive, d.Alcohol))
+    ]);
 
-    let leyendaX = 0; // Posición inicial para los elementos de la leyenda
-    const baseWidth = "Schizophrenia".length * 10 + 10; // Longitud de referencia para el ancho de la leyenda
+    // Actualizar ejes
+    svg2.select(".eje-x").call(d3.axisBottom(x));
+    svg2.select(".eje-y")
+        .transition()
+        .duration(1000)
+        .call(d3.axisLeft(y));
 
-    // Crear elementos de leyenda
-    disorders.map((disorder, i) => {
+    // Colores para cada trastorno
+    const colors = d3.scaleOrdinal(d3.schemeCategory10);
+
+    // Función para crear una línea
+    const createLine = disorder => d3.line()
+        .x(d => x(d.Year))
+        .y(d => y(d[disorder]));
+
+    // Actualizar o crear líneas y círculos para cada trastorno
+    actualizarLineaYCirculosCantidad("Schizophrenia", datosCantidad, colors(0));
+    actualizarLineaYCirculosCantidad("Bipolar", datosCantidad, colors(1));
+    actualizarLineaYCirculosCantidad("Eating", datosCantidad, colors(2));
+    actualizarLineaYCirculosCantidad("Anxiety", datosCantidad, colors(3));
+    actualizarLineaYCirculosCantidad("Drug", datosCantidad, colors(4));
+    actualizarLineaYCirculosCantidad("Depressive", datosCantidad, colors(5));
+    actualizarLineaYCirculosCantidad("Alcohol", datosCantidad, colors(6));
+
+    function actualizarLineaYCirculosCantidad(disorder, datos, color) {
+        // Aquí, repite la lógica de actualizarLineaYCirculos de dibujarGraficoPorcentual
+        // pero adaptándola para los datos de cantidad
+
+        // Actualizar la línea
+        svg2.selectAll(".line-" + disorder)
+            .data([datos])
+            .join("path")
+            .attr("class", "line-" + disorder)
+            .attr("fill", "none")
+            .attr("stroke", color)
+            .attr("stroke-width", 2.5)
+            .transition()
+            .duration(1000)
+            .attr("d", createLine(disorder));
+
+        // Actualizar los círculos
+        const circulos = svg2.selectAll(".circle-" + disorder)
+            .data(datos, d => d.Year);  // Key function for object constancy
+
+        circulos.enter()
+            .append("circle")
+            .attr("class", "circle-" + disorder)
+            .attr("r", 4)
+            .attr("fill", color)
+            .attr("stroke", color)
+            .attr("cx", d => x(d.Year))
+            .attr("cy", d => y(d[disorder]))
+            .on("mouseover", mouseover)
+            .on("mouseout", mouseout)
+            .transition()
+            .duration(1000)
+            .attr("cy", d => y(d[disorder]));
+
+        circulos
+            .on("mouseover", mouseover)
+            .on("mouseout", mouseout)
+            .transition()
+            .duration(1000)
+            .attr("cx", d => x(d.Year))
+            .attr("cy", d => y(d[disorder]));
+
+        circulos.exit()
+            .transition()
+            .duration(1000)
+            .attr("cy", d => y(0))
+            .remove();
+
+        function mouseover(event, d) {
+            d3.select("#tooltip")
+                .style("visibility", "visible")
+                .html(`Año: ${d.Year}<br>${disorder} Disorder: ${d[disorder].toFixed(0)} personas`)
+                .style("left", (event.pageX + 10) + "px")
+                .style("top", (event.pageY - 28) + "px");
+        }
+
+        function mouseout() {
+            d3.select("#tooltip").style("visibility", "hidden");
+        }
+    }
+}
+
+
+function crearLeyenda() {
+    let leyendaX = 0;
+    const baseWidth = "Schizophrenia".length * 10 + 10;
+    const colors = d3.scaleOrdinal(d3.schemeCategory10);
+
+    agregarElementoLeyenda("Schizophrenia", colors(0), leyendaX);
+    leyendaX += baseWidth;
+    agregarElementoLeyenda("Bipolar", colors(1), leyendaX);
+    leyendaX += baseWidth;
+    agregarElementoLeyenda("Eating", colors(2), leyendaX);
+    leyendaX += baseWidth;
+    agregarElementoLeyenda("Anxiety", colors(3), leyendaX);
+    leyendaX += baseWidth;
+    agregarElementoLeyenda("Drug", colors(4), leyendaX);
+    leyendaX += baseWidth;
+    agregarElementoLeyenda("Depressive", colors(5), leyendaX);
+    leyendaX += baseWidth;
+    agregarElementoLeyenda("Alcohol", colors(6), leyendaX);
+    leyendaX += baseWidth;
+
+    function agregarElementoLeyenda(disorder, color, posX) {
         const leyendaItem = leyenda.append("g")
-            .attr("transform", `translate(${leyendaX}, 0)`);
+            .attr("transform", `translate(${posX}, 0)`);
 
         leyendaItem.append("circle")
             .attr("cx", 0)
             .attr("cy", -20)
             .attr("r", 7)
-            .style("fill", colors(i));
+            .style("fill", color);
 
         leyendaItem.append("text")
             .attr("x", 15)
@@ -295,16 +499,5 @@ function dibujarGrafico(datosHistoricos) {
             .attr("dy", ".35em")
             .style("text-anchor", "start")
             .text(disorder);
-
-        leyendaX += baseWidth; // Actualiza la posición para el siguiente elemento de la leyenda
-    });
+    }
 }
-
-d3.select("#btnPromedio").on("click", () => cambiarTrastorno("Promedio"));
-d3.select("#btnSchizophrenia").on("click", () => cambiarTrastorno("Schizophrenia"));
-d3.select("#btnBipolar").on("click", () => cambiarTrastorno("Bipolar"));
-d3.select("#btnEating").on("click", () => cambiarTrastorno("Eating"));
-d3.select("#btnAnxiety").on("click", () => cambiarTrastorno("Anxiety"));
-d3.select("#btnDrug").on("click", () => cambiarTrastorno("Drug"));
-d3.select("#btnDepressive").on("click", () => cambiarTrastorno("Depressive"));
-d3.select("#btnAlcohol").on("click", () => cambiarTrastorno("Alcohol"));

@@ -50,6 +50,25 @@ img{
     font-weight: bolder;
 }
 
+#controls {
+    margin-top: 20px;
+    text-align: center; /* Centra los botones si hay espacio disponible */
+}
+
+#controls button {
+    margin: 5px;
+    padding: 8px 12px;
+    background-color: #f4f4f4;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+}
+
+#controls button:hover {
+    background-color: #e2e2e2;
+}
+
 #tooltip {
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     position: absolute;

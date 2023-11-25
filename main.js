@@ -1,6 +1,6 @@
 // ------------------------- Constantes SVG1 -------------------------
 const WIDTH1 = 1300;
-const HEIGHT1 = 1000;
+const HEIGHT1 = 800;
 const MARGIN1 = { 
     top: 20,
     right: 50,
@@ -69,10 +69,20 @@ svg2.append("g")
 svg2.append("g")
     .attr("class", "eje-y");
 
-// Variables globales SVG2 (ejes y colores)
+// Variables globales SVG2 (ejes, colores, trastornos)
 const colors = d3.scaleOrdinal(d3.schemeCategory10);
 const x = d3.scaleLinear().range([0, width2]);
 const y = d3.scaleLinear().range([height2, 0]);
+
+const trastornos = [
+    { ingles: "Schizophrenia", espanol: "Esquizofrenia" },
+    { ingles: "Bipolar", espanol: "Bipolar" },
+    { ingles: "Eating", espanol: "Alimenticios" },
+    { ingles: "Anxiety", espanol: "Ansiedad" },
+    { ingles: "Drug", espanol: "Drogas" },
+    { ingles: "Depressive", espanol: "Depresivos" },
+    { ingles: "Alcohol", espanol: "Alcohol" }
+];
 
 // Crear leyenda
 const leyenda = svg2.append("g")
@@ -82,15 +92,12 @@ const leyenda = svg2.append("g")
 crearLeyenda();
 
 // ------------------------- Definicion de Botones -------------------------
-d3.select("#btnPromedio").on("click", () => cambiarTrastorno("Promedio"));
-d3.select("#btnSchizophrenia").on("click", () => cambiarTrastorno("Schizophrenia"));
-d3.select("#btnBipolar").on("click", () => cambiarTrastorno("Bipolar"));
-d3.select("#btnEating").on("click", () => cambiarTrastorno("Eating"));
-d3.select("#btnAnxiety").on("click", () => cambiarTrastorno("Anxiety"));
-d3.select("#btnDrug").on("click", () => cambiarTrastorno("Drug"));
-d3.select("#btnDepressive").on("click", () => cambiarTrastorno("Depressive"));
-d3.select("#btnAlcohol").on("click", () => cambiarTrastorno("Alcohol"));
 
+trastornos.map(trastorno => {
+    d3.select(`#btn${trastorno.espanol}`).on("click", () => cambiarTrastorno(trastorno.ingles));
+});
+
+d3.select("#btnPromedio").on("click", () => cambiarTrastorno("Promedio"));
 d3.select("#btnPorcentual").on("click", mostrarEvolucionPorcentual);
 d3.select("#btnCantidad").on("click", mostrarEvolucionCantidad);
 
@@ -241,7 +248,7 @@ function crearMapa(datosFiltrados, trastorno) {
 function mostrarEvolucionPorcentual() {
     if (codigoPaisSeleccionado) {
         const datosHistoricos = filtrarYOrdenarDatosDeTrastornos();
-        dibujarGraficoPorcentual(datosHistoricos);
+        dibujarGrafico(datosHistoricos, true);
     }
 }
 
@@ -249,7 +256,7 @@ function mostrarEvolucionCantidad() {
     if (codigoPaisSeleccionado) {
         const datosHistoricos = filtrarYOrdenarDatosDeTrastornos();
         const datosCantidad = combinarYCalcularCantidad(datosHistoricos);
-        dibujarGraficoCantidad(datosCantidad);
+        dibujarGrafico(datosCantidad, false);
     }
 }
 
@@ -280,74 +287,63 @@ function combinarYCalcularCantidad(datosHistoricos) {
     });
 }
 
-// -----> Funcion de dibujo de grafico porcentual SVG2
-function dibujarGraficoPorcentual(datosHistoricos) {
-    x.domain(d3.extent(datosHistoricos, d => d.Year));
-    y.domain([0, d3.max(datosHistoricos, d => 
+// -----> Funcion de dibujo de grafico SVG2
+function dibujarGrafico(datosGenerales, esPorcentual) {
+    x.domain(d3.extent(datosGenerales, d => d.Year));
+    y.domain([0, d3.max(datosGenerales, d => 
         Math.max(d.Schizophrenia, d.Bipolar, d.Eating, d.Anxiety, d.Drug, d.Depressive, d.Alcohol))
     ]);
 
-    // Actualizar ejes
     svg2.select(".eje-x").call(d3.axisBottom(x));
     svg2.select(".eje-y")
         .transition()
         .duration(1000)
         .call(d3.axisLeft(y));
 
-    // Colores para cada trastorno
-    const colors = d3.scaleOrdinal(d3.schemeCategory10);
-
-    // Función para crear una línea
     const createLine = disorder => d3.line()
         .x(d => x(d.Year))
         .y(d => y(d[disorder]));
 
-    actualizarLineaYCirculos("Schizophrenia", datosHistoricos, colors(0));
-    actualizarLineaYCirculos("Bipolar", datosHistoricos, colors(1));
-    actualizarLineaYCirculos("Eating", datosHistoricos, colors(2));
-    actualizarLineaYCirculos("Anxiety", datosHistoricos, colors(3));
-    actualizarLineaYCirculos("Drug", datosHistoricos, colors(4));
-    actualizarLineaYCirculos("Depressive", datosHistoricos, colors(5));
-    actualizarLineaYCirculos("Alcohol", datosHistoricos, colors(6));
+    trastornos.map((trastorno, index) => {
+        actualizarLineaYCirculos(trastorno.ingles, datosGenerales, colors(index), esPorcentual);
+    });
 
-    function actualizarLineaYCirculos(disorder, datos, color) {
-        // Actualizar la línea
-        svg2.selectAll(".line-" + disorder)
+    function actualizarLineaYCirculos(trastorno, datos, color, esPorcentual) {
+        svg2.selectAll(".line-" + trastorno)
             .data([datos])
             .join("path")
-            .attr("class", "line-" + disorder)
+            .attr("class", "line-" + trastorno)
             .attr("fill", "none")
             .attr("stroke", color)
             .attr("stroke-width", 2.5)
             .transition()
             .duration(1000)
-            .attr("d", createLine(disorder));
-
-        // Actualizar los círculos
-        const circulos = svg2.selectAll(".circle-" + disorder)
-            .data(datos, d => d.Year);  // Key function for object constancy
-
+            .attr("d", createLine(trastorno));
+        
+        const circulos = svg2.selectAll(".circle-" + trastorno)
+            .data(datos, d => d.Year);
+    
         circulos.enter()
             .append("circle")
-            .attr("class", "circle-" + disorder)
+            .attr("class", "circle-" + trastorno)
             .attr("r", 4)
             .attr("fill", color)
             .attr("stroke", color)
             .attr("cx", d => x(d.Year))
-            .attr("cy", d => y(d[disorder]))
-            .on("mouseover", mouseover)
+            .attr("cy", d => y(d[trastorno]))
+            .on("mouseover", (event, d) => mouseover(event, d, trastorno, esPorcentual))
             .on("mouseout", mouseout)
             .transition()
             .duration(1000)
-            .attr("cy", d => y(d[disorder]));
+            .attr("cy", d => y(d[trastorno]));
     
         circulos
-            .on("mouseover", mouseover)
+            .on("mouseover", (event, d) => mouseover(event, d, trastorno, esPorcentual))
             .on("mouseout", mouseout)
             .transition()
             .duration(1000)
             .attr("cx", d => x(d.Year))
-            .attr("cy", d => y(d[disorder]));
+            .attr("cy", d => y(d[trastorno]));
     
         circulos.exit()
             .transition()
@@ -355,12 +351,14 @@ function dibujarGraficoPorcentual(datosHistoricos) {
             .attr("cy", d => y(0))
             .remove();
     
-        function mouseover(event, d) {
+        function mouseover(event, d, trastorno, isPorcentual) {
             d3.select("#tooltip")
                 .style("visibility", "visible")
-                .html(`Año: ${d.Year}<br>${disorder} Disorder: ${d[disorder].toFixed(3)}%`)
+                .html(`Año: ${d.Year}<br>
+                    ${isPorcentual ? "Porcentaje: " + d[trastorno].toFixed(3) + '%' : 
+                    "Cantidad: " + d[trastorno].toFixed(0) + ' personas'}`)
                 .style("left", (event.pageX + 10) + "px")
-                .style("top", (event.pageY - 28) + "px");
+                .style("top", (event.pageY - 30) + "px");
         }
     
         function mouseout() {
@@ -369,121 +367,14 @@ function dibujarGraficoPorcentual(datosHistoricos) {
     }
 }
 
-function dibujarGraficoCantidad(datosCantidad) {
-    // Configurar las escalas de acuerdo con los datos de cantidad
-    x.domain(d3.extent(datosCantidad, d => d.Year));
-    y.domain([0, d3.max(datosCantidad, d => 
-        Math.max(d.Schizophrenia, d.Bipolar, d.Eating, d.Anxiety, d.Drug, d.Depressive, d.Alcohol))
-    ]);
-
-    // Actualizar ejes
-    svg2.select(".eje-x").call(d3.axisBottom(x));
-    svg2.select(".eje-y")
-        .transition()
-        .duration(1000)
-        .call(d3.axisLeft(y));
-
-    // Colores para cada trastorno
-    const colors = d3.scaleOrdinal(d3.schemeCategory10);
-
-    // Función para crear una línea
-    const createLine = disorder => d3.line()
-        .x(d => x(d.Year))
-        .y(d => y(d[disorder]));
-
-    // Actualizar o crear líneas y círculos para cada trastorno
-    actualizarLineaYCirculosCantidad("Schizophrenia", datosCantidad, colors(0));
-    actualizarLineaYCirculosCantidad("Bipolar", datosCantidad, colors(1));
-    actualizarLineaYCirculosCantidad("Eating", datosCantidad, colors(2));
-    actualizarLineaYCirculosCantidad("Anxiety", datosCantidad, colors(3));
-    actualizarLineaYCirculosCantidad("Drug", datosCantidad, colors(4));
-    actualizarLineaYCirculosCantidad("Depressive", datosCantidad, colors(5));
-    actualizarLineaYCirculosCantidad("Alcohol", datosCantidad, colors(6));
-
-    function actualizarLineaYCirculosCantidad(disorder, datos, color) {
-        // Aquí, repite la lógica de actualizarLineaYCirculos de dibujarGraficoPorcentual
-        // pero adaptándola para los datos de cantidad
-
-        // Actualizar la línea
-        svg2.selectAll(".line-" + disorder)
-            .data([datos])
-            .join("path")
-            .attr("class", "line-" + disorder)
-            .attr("fill", "none")
-            .attr("stroke", color)
-            .attr("stroke-width", 2.5)
-            .transition()
-            .duration(1000)
-            .attr("d", createLine(disorder));
-
-        // Actualizar los círculos
-        const circulos = svg2.selectAll(".circle-" + disorder)
-            .data(datos, d => d.Year);  // Key function for object constancy
-
-        circulos.enter()
-            .append("circle")
-            .attr("class", "circle-" + disorder)
-            .attr("r", 4)
-            .attr("fill", color)
-            .attr("stroke", color)
-            .attr("cx", d => x(d.Year))
-            .attr("cy", d => y(d[disorder]))
-            .on("mouseover", mouseover)
-            .on("mouseout", mouseout)
-            .transition()
-            .duration(1000)
-            .attr("cy", d => y(d[disorder]));
-
-        circulos
-            .on("mouseover", mouseover)
-            .on("mouseout", mouseout)
-            .transition()
-            .duration(1000)
-            .attr("cx", d => x(d.Year))
-            .attr("cy", d => y(d[disorder]));
-
-        circulos.exit()
-            .transition()
-            .duration(1000)
-            .attr("cy", d => y(0))
-            .remove();
-
-        function mouseover(event, d) {
-            d3.select("#tooltip")
-                .style("visibility", "visible")
-                .html(`Año: ${d.Year}<br>${disorder} Disorder: ${d[disorder].toFixed(0)} personas`)
-                .style("left", (event.pageX + 10) + "px")
-                .style("top", (event.pageY - 28) + "px");
-        }
-
-        function mouseout() {
-            d3.select("#tooltip").style("visibility", "hidden");
-        }
-    }
-}
-
-
+// -----> Funcion de creacion de leyenda SVG2
 function crearLeyenda() {
-    let leyendaX = 0;
-    const baseWidth = "Schizophrenia".length * 10 + 10;
-    const colors = d3.scaleOrdinal(d3.schemeCategory10);
+    const baseWidth = "Esquizofrenia".length * 10 + 10;
+    trastornos.map((trastorno, index) => {
+        agregarElementoLeyenda(trastorno.espanol, colors(index), index * baseWidth);
+    });
 
-    agregarElementoLeyenda("Schizophrenia", colors(0), leyendaX);
-    leyendaX += baseWidth;
-    agregarElementoLeyenda("Bipolar", colors(1), leyendaX);
-    leyendaX += baseWidth;
-    agregarElementoLeyenda("Eating", colors(2), leyendaX);
-    leyendaX += baseWidth;
-    agregarElementoLeyenda("Anxiety", colors(3), leyendaX);
-    leyendaX += baseWidth;
-    agregarElementoLeyenda("Drug", colors(4), leyendaX);
-    leyendaX += baseWidth;
-    agregarElementoLeyenda("Depressive", colors(5), leyendaX);
-    leyendaX += baseWidth;
-    agregarElementoLeyenda("Alcohol", colors(6), leyendaX);
-    leyendaX += baseWidth;
-
-    function agregarElementoLeyenda(disorder, color, posX) {
+    function agregarElementoLeyenda(trastorno, color, posX) {
         const leyendaItem = leyenda.append("g")
             .attr("transform", `translate(${posX}, 0)`);
 
@@ -498,6 +389,6 @@ function crearLeyenda() {
             .attr("y", -20)
             .attr("dy", ".35em")
             .style("text-anchor", "start")
-            .text(disorder);
+            .text(trastorno);
     }
 }

@@ -14,22 +14,6 @@ body {
     margin: 10px;
 }
 
-.response {
-    text-align: start;
-    border: solid gray 2px;
-    padding: 10px;
-    margin: 10px;
-}
-
-.response h5 {
-    margin: 0px;
-    color: rgb(57, 57, 57);
-}
-
-.response h4 {
-    margin-bottom: 0px;
-}
-
 .img {
     max-width: 800px;
     display: inline-flex;
@@ -50,12 +34,12 @@ img{
     font-weight: bolder;
 }
 
-#controls {
+#botones {
     margin-top: 20px;
     text-align: center; /* Centra los botones si hay espacio disponible */
 }
 
-#controls button {
+#botones button {
     margin: 5px;
     padding: 8px 12px;
     background-color: #f4f4f4;
@@ -65,7 +49,7 @@ img{
     transition: background-color 0.3s ease;
 }
 
-#controls button:hover {
+#botones button:hover {
     background-color: #e2e2e2;
 }
 

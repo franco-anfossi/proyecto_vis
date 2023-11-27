@@ -7,36 +7,14 @@ body {
     text-align: center;
 }
 
-.case h2 {
-    /* Puedes cambiar el color de fondo (background-color) si lo deseas */
-    background-color: #e0a45e;
+h1 {
+    margin: 20px;
     padding: 10px;
-    margin: 10px;
-}
-
-.img {
-    max-width: 800px;
-    display: inline-flex;
-    justify-content: center;
-    margin: 10px;
-}
-
-img{
-    width: 100%;
-    height: auto;
-}
-
-.hint{
-    opacity: 0.7;
-    color: rgb(200, 42, 42);
-    border: 1px solid;
-    padding: 5px;
-    font-weight: bolder;
 }
 
 #botones {
     margin-top: 20px;
-    text-align: center; /* Centra los botones si hay espacio disponible */
+    text-align: center;
 }
 
 #botones button {

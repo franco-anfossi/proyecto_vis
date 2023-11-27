@@ -8,33 +8,34 @@
     <link rel="stylesheet" href="style_vis.css">
     <script src="https://d3js.org/d3.v7.js"></script>
     <script src="https://d3js.org/d3-geo-projection.v4.min.js"></script>
-    <title>LOLITO</title>
+    <title>Herramienta Proyecto IIC2026</title>
 </head>
 
 <body>
     <div class="container">
-        <h1>Proyecto</h1>
-
-        <h2>Visualización 1 - Mapa Mundi con Datos Promediados del Año mas Actual</h2>
-        <div id="botones">
-            <button id="btnPromedio">Promediados</button>
-            <button id="btnEsquizofrenia">Esquizofrenia</button>
-            <button id="btnBipolar">Bipolar</button>
-            <button id="btnAlimenticios">Alimenticios</button>
-            <button id="btnAnsiedad">Ansiedad</button>
-            <button id="btnDrogas">Drogas</button>
-            <button id="btnDepresivos">Depresivos</button>
-            <button id="btnAlcohol">Alcohol</button>
+        <h1>Proyecto de Analisis de Trastornos Mentales en el Mundo</h1>
+        <div id="vis-1">
+            <h2 id="titulo-1">Mapa Global de Prevalencia de Trastornos Mentales en 2017</h2>
+            <div id="botones">
+                <button id="btnPromedio">Promediados</button>
+                <button id="btnEsquizofrenia">Esquizofrenia</button>
+                <button id="btnBipolar">Bipolar</button>
+                <button id="btnAlimenticios">Alimenticios</button>
+                <button id="btnAnsiedad">Ansiedad</button>
+                <button id="btnDrogas">Drogas</button>
+                <button id="btnDepresivos">Depresivos</button>
+                <button id="btnAlcohol">Alcohol</button>
+            </div>
         </div>
-        <div id="vis-1"></div>
 
-        <h2>Visualización 2 - Al Seleccionar un Pais Mostrar en graficos de lineas la evoluacion del porcentaje</h2>
         <div id="vis-2">
+            <h2 id="titulo-2">Análisis Temporal de la Prevalencia de Trastornos Mentales</h2>
+            <p>Presiona algún país para ver la especificación de este.</p>
             <div id="botones">
                 <button id="btnPorcentual">Evolucion Porcentual</button>
                 <button id="btnCantidad">Evolucion en Cantidad de Personas</button>
             </div>
-        </div>
+                
 
         <div id="tooltip"></div>
     </div>

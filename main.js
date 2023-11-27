@@ -36,6 +36,14 @@ const svg1 = d3
     .attr("width", WIDTH1)
     .attr("height", HEIGHT1);
 
+svg1.append("text")
+   .attr("x", WIDTH1 - widthOne + MARGIN1.left + 5)
+   .attr("y", MARGIN1.top)
+   .attr("id", "trastorno-seleccionado")
+   .attr("text-anchor", "middle")
+   .style("font-size", "20px")
+   .text("Trastorno Seleccionado: Promediados");
+
 // Contenedor para el mapa
 const contenedorMapa = svg1
     .append("g")
@@ -94,10 +102,17 @@ crearLeyenda();
 // ------------------------- Definicion de Botones -------------------------
 
 trastornos.map(trastorno => {
-    d3.select(`#btn${trastorno.espanol}`).on("click", () => cambiarTrastorno(trastorno.ingles));
+    d3.select(`#btn${trastorno.espanol}`).on("click", () => {
+        cambiarTrastorno(trastorno.ingles);
+        d3.select("#trastorno-seleccionado").text(`Trastorno Seleccionado: ${trastorno.espanol}`);
+    });
 });
 
-d3.select("#btnPromedio").on("click", () => cambiarTrastorno("Promedio"));
+d3.select("#btnPromedio").on("click", () => {
+    cambiarTrastorno("Promedio");
+    d3.select("#trastorno-seleccionado").text(`Trastorno Seleccionado: Promediados`);
+});
+
 d3.select("#btnPorcentual").on("click", mostrarEvolucionPorcentual);
 d3.select("#btnCantidad").on("click", mostrarEvolucionCantidad);
 
@@ -245,10 +260,16 @@ function crearMapa(datosFiltrados, trastorno) {
 }
 
 // -----> Funcion de cambio de grafico SVG2 por boton
+function actualizarTituloGrafico(nombrePais, esPorcentual) {
+    let tipoDato = esPorcentual ? "Porcentual" : "de Cantidad";
+    d3.select("#titulo-2").text(`Análisis Temporal ${tipoDato} de la Prevalencia de Trastornos Mentales en ${nombrePais}`);
+}
+
 function mostrarEvolucionPorcentual() {
     if (codigoPaisSeleccionado) {
         const datosHistoricos = filtrarYOrdenarDatosDeTrastornos();
         dibujarGrafico(datosHistoricos, true);
+        actualizarTituloGrafico(datosHistoricos[0].Entity, true);
     }
 }
 
@@ -257,6 +278,7 @@ function mostrarEvolucionCantidad() {
         const datosHistoricos = filtrarYOrdenarDatosDeTrastornos();
         const datosCantidad = combinarYCalcularCantidad(datosHistoricos);
         dibujarGrafico(datosCantidad, false);
+        actualizarTituloGrafico(datosHistoricos[0].Entity, false);
     }
 }
 
